@@ -2,12 +2,40 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import axios from 'axios'
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
 
   const toggleForm = () => {
     setIsLogin(!isLogin)
+  }
+
+  const handleSubmit = async (e:any) => {
+    e.preventDefault() 
+
+    const payload = {
+      email,
+      password,
+      ...(fullName && { fullName }) 
+    }
+
+    try {
+      let response;
+      if (isLogin) {
+        response = await axios.post('http://localhost:3000/login', payload)
+      } else {
+        response = await axios.post('http://localhost:3000/signup', payload)
+      }
+
+      console.log(response.data) 
+ 
+    } catch (error:any) {
+      console.error('Error:', error.response?.data || error.message) // Handle error
+    }
   }
 
   return (
@@ -21,23 +49,29 @@ export default function AuthPage() {
           <h2 className="text-3xl font-bold text-center text-gray-100 mb-6">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {!isLogin && (
               <input
                 type="text"
                 placeholder="Full Name"
                 className="w-full px-4 py-2 rounded-lg bg-gray-700 bg-opacity-50 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
               />
             )}
             <input
               type="email"
               placeholder="Email Address"
               className="w-full px-4 py-2 rounded-lg bg-gray-700 bg-opacity-50 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               type="password"
               placeholder="Password"
               className="w-full px-4 py-2 rounded-lg bg-gray-700 bg-opacity-50 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
             <button
               type="submit"
@@ -61,4 +95,3 @@ export default function AuthPage() {
     </div>
   )
 }
-

@@ -32,6 +32,9 @@ export default function AuthPage() {
       }
 
       console.log(response.data) 
+      if(response.data.success){
+        alert(response.data.message)
+      }
  
     } catch (error:any) {
       console.error('Error:', error.response?.data || error.message) // Handle error

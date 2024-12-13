@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { Shield, Lock, Share2 } from 'lucide-react';
 
 const Home: React.FC = () => {
+
+
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-indigo-900 text-gray-100">
       <header className="container mx-auto p-4">

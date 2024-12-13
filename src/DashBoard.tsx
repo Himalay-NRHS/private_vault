@@ -4,6 +4,7 @@ import sodium from "libsodium-wrappers";
 import { form, u } from 'framer-motion/client';
 import { type } from 'node:os';
 import axios, { AxiosRequestConfig } from 'axios';
+import FileList from './FileList';
 
 interface File {
   id: string;
@@ -28,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [securityKey2, setSecurityKey2] = useState('');
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const [downloadKey, setDownloadKey] = useState('');
+  const [downloadKey2, setDownloadKey2] = useState('');
 const [fileExtention, setfileExtention] = useState('');
 const [encryptedFileUrl, setEncryptedFileUrl] = useState<string | null>(null); 
 const [keyHex, setKeyHex] = useState<string>(""); 
@@ -166,13 +168,15 @@ const encryptFile = async (file: any, fileExtension: string) => {
   const handleDownload = (id: string) => {
     setDownloadingFileId(id);
     setDownloadKey('');
+    setDownloadKey2('');
   };
 
   const handleDownloadSubmit = () => {
-    console.log(`Downloading file ${downloadingFileId} with key ${downloadKey}`);
+    console.log(`Downloading file ${downloadingFileId} with keys ${downloadKey} and ${downloadKey2}`);
     // Here you would implement the actual download logic
     setDownloadingFileId(null);
     setDownloadKey('');
+    setDownloadKey2('');
   };
 
   const handleReceiveNext = () => {
@@ -199,14 +203,14 @@ const encryptFile = async (file: any, fileExtension: string) => {
 
       <main className="container mx-auto mt-8 px-4">
         <div className="grid md:grid-cols-2 gap-8">
-          <section className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">Upload Files</h2>
+          <section className="bg-gray-800 p-6 rounded-lg shadow-xl">
+            <h2 className="text-xl font-semibold mb-4 text-purple-400">Upload Files</h2>
             <div className="flex items-center justify-center w-full">
-              <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-64 border-2 border-indigo-300 border-dashed rounded-lg cursor-pointer bg-indigo-50 hover:bg-indigo-100 transition-colors">
+              <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-64 border-2 border-purple-400 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 transition-colors">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-10 h-10 mb-3 text-indigo-500" />
-                  <p className="mb-2 text-sm text-indigo-600"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                  <p className="text-xs text-indigo-500">Any file type (MAX. 100MB)</p>
+                  <Upload className="w-10 h-10 mb-3 text-purple-400" />
+                  <p className="mb-2 text-sm text-purple-300"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                  <p className="text-xs text-gray-400">Any file type (MAX. 100MB)</p>
                 </div>
                 <input id="file-upload" type="file" className="hidden" onChange={handleFileUpload} multiple />
               </label>
@@ -215,39 +219,12 @@ const encryptFile = async (file: any, fileExtension: string) => {
 
           <section className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-semibold mb-4">Your Files</h2>
-            <ul className="space-y-4">
-              {files.map(file => (
-                <li key={file.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-md">
-                  <div>
-                    <p className="font-medium text-indigo-600">{file.name}</p>
-                    <p className="text-sm text-gray-500">{file.size} • Uploaded on {file.uploadDate}</p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleDownload(file.id)}
-                      className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors"
-                      aria-label="Download file"
-                    >
-                      <Download className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleShare(file.id)}
-                      className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors"
-                      aria-label="Share file"
-                    >
-                      <Share2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(file.id)}
-                      className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"
-                      aria-label="Delete file"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <FileList
+              files={files}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              onDelete={handleDelete}
+            />
             {sharingFileId && (
               <div className="mt-4 p-4 bg-indigo-50 rounded-md">
                 <h3 className="font-semibold mb-2">Share File</h3>
@@ -271,9 +248,16 @@ const encryptFile = async (file: any, fileExtension: string) => {
                 <h3 className="font-semibold mb-2">Download File</h3>
                 <input
                   type="text"
-                  placeholder="Enter decryption key"
+                  placeholder="Enter decryption key 1"
                   value={downloadKey}
                   onChange={(e) => setDownloadKey(e.target.value)}
+                  className="w-full p-2 border rounded-md mb-2"
+                />
+                <input
+                  type="text"
+                  placeholder="Enter decryption key 2"
+                  value={downloadKey2}
+                  onChange={(e) => setDownloadKey2(e.target.value)}
                   className="w-full p-2 border rounded-md mb-2"
                 />
                 <button
@@ -351,7 +335,7 @@ const encryptFile = async (file: any, fileExtension: string) => {
             </div>
           )}
         </section>
-?      </main>
+      </main>
     </div>
   );
 };

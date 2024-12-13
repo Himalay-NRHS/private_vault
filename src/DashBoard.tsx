@@ -3,6 +3,7 @@ import { Upload, Trash2, Share2, Download, ChevronRight } from 'lucide-react';
 import sodium from "libsodium-wrappers";
 import { form } from 'framer-motion/client';
 import { type } from 'node:os';
+import axios from 'axios';
 
 interface File {
   id: string;
@@ -46,24 +47,20 @@ const encryptFile = async (file: any, fileExtension: string) => {
   
       // Encrypt the file content
       const encryptedData = sodium.crypto_secretbox_easy(fileData, nonce, key);
-     console.log(typeof encryptedData) 
   decryptFile(encryptedData, nonce, key);
       // Create a Blob from the encrypted data
-      const blob = new Blob([encryptedData], { type: "application/octet-stream" });
   
       // Log the encrypted data, nonce, and key for debugging
       console.log("Encrypted data, nonce, key:", encryptedData, nonce, key);
   
       // Encrypt the file and generate the formData
-      const formData = new FormData();
-      formData.append("file", blob, `encryptedFile.${fileExtension}.bin`); // File name includes the original extension for clarity
-  
+      const response = await axios.post("http://localhost:3000/upload", { encryptedData, fileExtension });
       // Normally you'd send the formData to a backend here:
       // const response = await fetch('your-backend-endpoint', { method: 'POST', body: formData });
       // console.log(response);
   
       // For now, we just return the encrypted file details to handle it further
-      console.log(formData);
+      console.log(response);
     };
   
     fileReader.readAsArrayBuffer(file);

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Upload, Trash2, Share2, Download, ChevronRight } from 'lucide-react';
 import sodium from "libsodium-wrappers";
-import { form } from 'framer-motion/client';
+import { form, u } from 'framer-motion/client';
 import { type } from 'node:os';
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 
 interface File {
   id: string;
@@ -32,7 +32,8 @@ const [fileExtention, setfileExtention] = useState('');
 const [encryptedFileUrl, setEncryptedFileUrl] = useState<string | null>(null); 
 const [keyHex, setKeyHex] = useState<string>(""); 
 const [nonceHex, setNonceHex] = useState<string>(""); 
-
+let key;
+let nonce;
 
 const encryptFile = async (file: any, fileExtension: string) => {
     await sodium.ready;
@@ -42,29 +43,40 @@ const encryptFile = async (file: any, fileExtension: string) => {
       const fileData = new Uint8Array(fileReader.result as ArrayBuffer);
   
       // Generate a random key and nonce
-      const key = sodium.randombytes_buf(sodium.crypto_secretbox_KEYBYTES);
-      const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
+       key = sodium.randombytes_buf(sodium.crypto_secretbox_KEYBYTES);
+       nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
   
       // Encrypt the file content
       const encryptedData = sodium.crypto_secretbox_easy(fileData, nonce, key);
-  decryptFile(encryptedData, nonce, key);
-      // Create a Blob from the encrypted data
   
-      // Log the encrypted data, nonce, and key for debugging
-      console.log("Encrypted data, nonce, key:", encryptedData, nonce, key);
+      // Store the key and nonce securely (client-side or in a secure vault)
+      // In this example, we are just logging them but you should store them securely.
+      console.log("Key and nonce are stored securely, do not send them!");
   
-      // Encrypt the file and generate the formData
-      const response = await axios.post("http://localhost:3000/upload", { encryptedData, fileExtension });
-      // Normally you'd send the formData to a backend here:
-      // const response = await fetch('your-backend-endpoint', { method: 'POST', body: formData });
-      // console.log(response);
+      // Send only the encrypted data and file metadata (e.g., fileExtension)
+      
+      const response = await axios.post("http://localhost:3000/upload", {
+        encryptedData: encryptedData,
+        fileExtension: fileExtension,
+        nonce: nonce,
+        key: key
+      });
   
-      // For now, we just return the encrypted file details to handle it further
-      console.log(response);
+      f()
     };
   
     fileReader.readAsArrayBuffer(file);
   };
+    
+  async function f(){
+    const response = await axios.get("http://localhost:3000/give");
+    console.log(response.data);
+    const encryptedDataArray = new Uint8Array(Object.values(response.data));
+
+      // Log the received encrypted data
+      console.log("Received encrypted data:", encryptedDataArray);
+      decryptFile(encryptedDataArray,nonce,key)
+  }
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     
     const file = event.target.files?.[0];
@@ -92,25 +104,49 @@ const encryptFile = async (file: any, fileExtension: string) => {
       }
     }
   };
-  const decryptFile = async (encryptedData: Uint8Array, nonce: Uint8Array, key: Uint8Array) => {
+  const decryptFile = async (encryptedData: any, nonce: any, key: any, fileExtension: string = 'pdf') => {
     await sodium.ready;
-  
+    console.log("Decryption started");
+  console.log(encryptedData);
     // Decrypt the file data
+    
     const decryptedData = sodium.crypto_secretbox_open_easy(encryptedData, nonce, key);
     if (!decryptedData) {
-      console.error("Decryption failed!");
-      return null;
-    }
+        console.error("Decryption failed!");
+        return null;
+      }
+
+    
+  
+    console.log("Decryption done", decryptedData);
   
     // Convert the decrypted binary data back to a Blob
-    const blob = new Blob([decryptedData], { type: "application/octet-stream" });
+    const decryptedBlob = new Blob([decryptedData]);
   
-    // Create a URL for the Blob to allow the user to download it
-    const decryptedUrl = URL.createObjectURL(blob);
-    console.log(decryptedUrl);
-    // Return the decrypted file URL so it can be used for download
-    return decryptedUrl;
+    // Create a download URL for the Blob
+    const downloadUrl = URL.createObjectURL(decryptedBlob);
+  
+    // Create a download link element (but don't show it to the user)
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+  
+    // Set the filename with the specified extension (defaulting to .pdf)
+    const fileName = `decrypted_file.${fileExtension}`; // You can customize the name here
+    a.download = fileName;
+  
+    // Append the link to the body (not necessary, but sometimes needed for triggering)
+    document.body.appendChild(a);
+  
+    // Trigger the download automatically
+    a.click();
+  
+    // Clean up the URL object after download
+    URL.revokeObjectURL(downloadUrl);
+  
+    // Optionally, remove the link element from the DOM
+    document.body.removeChild(a);
   };
+  
 
   const handleDelete = (id: string) => {
     setFiles(files.filter(file => file.id !== id));
